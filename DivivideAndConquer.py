@@ -1,4 +1,5 @@
-import time 
+import time
+import matplotlib.pyplot as plt
 
 class TreeNode:
     def __init__(self, val, left=None, right=None):
@@ -7,73 +8,52 @@ class TreeNode:
         self.right = right
 
 def generate_bsts(start, end):
-    """
-    Genera todos los BST en el rango [start, end] usando Divide and Conquer.
-    """
     if start > end:
         return [None]
     
     all_trees = []
     for root_val in range(start, end + 1):
-        left_subtrees = generate_bsts(start, root_val - 1)    # Divide: subárbol izquierdo
-        right_subtrees = generate_bsts(root_val + 1, end)     # Divide: subárbol derecho
+        left_subtrees = generate_bsts(start, root_val - 1)
+        right_subtrees = generate_bsts(root_val + 1, end)
         
-        # Combine: combina todas las opciones
         for left in left_subtrees:
             for right in right_subtrees:
-                root = TreeNode(root_val)
-                root.left = left
-                root.right = right
-                all_trees.append(root)
+                all_trees.append(TreeNode(root_val, left, right))
     
     return all_trees
 
-def print_tree(root, level=0, prefix="Raíz: "):
-    """
-    Imprime el árbol en consola con formato jerárquico.
-    """
-    if root is not None:
-        print("    " * level + f"{prefix}{root.val}")
-        if root.left or root.right:
-            print_tree(root.left, level + 1, "Izq:  ")
-            print_tree(root.right, level + 1, "Der:  ")
-
-def visualize_tree_jpg(root, filename):
-    """
-    Genera una imagen JPG del árbol usando graphviz.
-    """
-    from graphviz import Digraph
-    dot = Digraph(format='jpg')
-    dot.attr('node', shape='circle')
+def measure_execution_time(n_values):
+    execution_times = {}
     
-    def add_nodes_edges(node):
-        if node:
-            dot.node(str(id(node)), str(node.val))
-            if node.left:
-                dot.edge(str(id(node)), str(id(node.left)))
-                add_nodes_edges(node.left)
-            if node.right:
-                dot.edge(str(id(node)), str(id(node.right)))
-                add_nodes_edges(node.right)
+    for n in n_values:
+        start_time = time.time()
+        generate_bsts(1, n)
+        end_time = time.time()
+        
+        execution_times[n] = (end_time - start_time) * 1000  # ms
+        print(f"n = {n}: {execution_times[n]:.2f} ms")
     
-    add_nodes_edges(root)
-    dot.render(filename, view=False)  # Genera el archivo JPG sin abrirlo automáticamente
+    return execution_times
 
-n = 15  # Este es para saber el n. 
-start_time = time.time()
-all_bsts = generate_bsts(1, n)
-end_time = time.time()
+def plot_execution_times(execution_data):
+    n_values = list(execution_data.keys())
+    times = list(execution_data.values())
+    
+    plt.figure(figsize=(12, 8))
+    plt.plot(n_values, times, 'bo-', linewidth=2, markersize=8)
+    plt.title('Tiempo de ejecución vs Número de nodos (BST)')
+    plt.xlabel('Número de nodos (n)')
+    plt.ylabel('Tiempo de ejecución (ms)')
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.xticks(n_values)
+    plt.savefig('tiempos_bst_DaC.png')  # Guarda la gráfica como PNG
+    plt.show()
 
-print(f"\n🔍 Total de BSTs para n={n}: {len(all_bsts)}\n")
-print(f"⏱️ Tiempo de ejecución: {(end_time - start_time) * 1000:.2f} milisegundos\n")
+# Configuración de la prueba
+n_values = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]  
 
-""""
-# Imprimir en consola y generar JPG
-for idx, bst in enumerate(all_bsts, 1):
-    print(f"🌳 Árbol {idx}:")
-    print_tree(bst)
-    visualize_tree_jpg(bst, f"bst_{idx}")  # Genera JPG
-    print("\n" + "-" * 40 + "\n")
-
-print("✅ ¡Imágenes JPG generadas en el directorio actual!")
-"""
+# Ejecutar las pruebas y generar gráfica
+print("⚡ Iniciando pruebas de rendimiento...\n")
+time_data = measure_execution_time(n_values)
+print("\n📊 Generando gráfica de resultados...")
+plot_execution_times(time_data)
